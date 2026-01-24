@@ -68,7 +68,6 @@ enum allm_trigger_mode {
 #define VTEM_BRR_MASK_UPPER 0x03
 #define VTEM_BRR_MASK_LOWER 0xFF
 
-
 /* VTEM Byte Offset */
 #define VTEM_PB0 0
 #define VTEM_PB1 1
@@ -103,7 +102,6 @@ enum allm_trigger_mode {
 #define VTEM_BRR_UPPER_BIT 0
 #define VTEM_RB_BIT        2
 /* MD3 BRR Lower */
-
 
 enum ColorimetryRGBDP {
 	ColorimetryRGB_DP_sRGB               = 0,
