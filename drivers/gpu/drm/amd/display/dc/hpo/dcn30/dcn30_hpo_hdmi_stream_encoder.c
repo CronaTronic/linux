@@ -354,7 +354,10 @@ static void dcn30_hpo_hdmi_stream_enc_setup_stream_attribute(
 	REG_UPDATE_2(HDMI_TB_ENC_CRC_CNTL, HDMI_CRC_EN, 1, HDMI_CRC_CONT_EN, 1);
 
 	/* Borrow mode */
-	REG_UPDATE(HDMI_TB_ENC_MODE, HDMI_BORROW_MODE, 1);
+	// TODO: Change based on windows register dump. Is this appropriate for all DCN architectures using this?
+	REG_UPDATE_2(HDMI_TB_ENC_MODE,
+			HDMI_BORROW_MODE, 2,
+			HDMI_SKIP_FIRST_HBLANK, 1);
 
 	/* Disable double buffering */
 	REG_UPDATE(HDMI_TB_ENC_DB_CONTROL, HDMI_DB_DISABLE, 1);

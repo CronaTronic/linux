@@ -177,13 +177,15 @@ static void dccg31_enable_hdmistreamclk(struct dccg *dccg, int otg_inst, int hdm
 	/* enabled to select one of the DTBCLKs for pipe */
 	switch (hdmi_hpo_inst) {
 	case 0:
+		// Only true for DCN314, DCN35, DCN351, DCN36
 		if (dccg->ctx->dc->debug.root_clock_optimization.bits.hdmistream) {
 			REG_UPDATE(DCCG_GATE_DISABLE_CNTL3,
 					HDMISTREAMCLK0_GATE_DISABLE, 1);
 		}
+		// TODO: DCN312 and DCN314 both have HDMISTREAMCLK0_EN. Should DCN312 be using the same clock routing?
 		REG_UPDATE_2(HDMISTREAMCLK_CNTL,
 				HDMISTREAMCLK0_SRC_SEL, otg_inst,
-				HDMISTREAMCLK0_EN, 1);
+				HDMISTREAMCLK0_DTO_FORCE_DIS, 1);
 		break;
 	default:
 		BREAK_TO_DEBUGGER();
@@ -198,7 +200,8 @@ static void dccg31_disable_hdmistreamclk(struct dccg *dccg, int hdmi_hpo_inst)
 	switch (hdmi_hpo_inst) {
 	case 0:
 		REG_UPDATE(HDMISTREAMCLK_CNTL,
-				HDMISTREAMCLK0_EN, 0);
+				HDMISTREAMCLK0_DTO_FORCE_DIS, 0);
+		// Only true for DCN314, DCN35, DCN351, DCN36
 		if (dccg->ctx->dc->debug.root_clock_optimization.bits.hdmistream) {
 			REG_UPDATE(DCCG_GATE_DISABLE_CNTL3,
 					HDMISTREAMCLK0_GATE_DISABLE, 0);
@@ -599,65 +602,68 @@ void dccg31_set_dtbclk_dto(
 		const struct dtbclk_dto_params *params)
 {
 	struct dcn_dccg *dccg_dcn = TO_DCN_DCCG(dccg);
-	int req_dtbclk_khz = params->pixclk_khz;
-	uint32_t dtbdto_div;
+	if (dccg->ctx->dce_version != DCN_VERSION_3_15) {
+		int req_dtbclk_khz = params->pixclk_khz;
+		uint32_t dtbdto_div;
 
-	/* Mode	                DTBDTO Rate       DTBCLK_DTO<x>_DIV Register
-	 * ODM 4:1 combine      pixel rate/4      2
-	 * ODM 2:1 combine      pixel rate/2      4
-	 * non-DSC 4:2:0 mode   pixel rate/2      4
-	 * DSC native 4:2:0     pixel rate/2      4
-	 * DSC native 4:2:2     pixel rate/2      4
-	 * Other modes          pixel rate        8
-	 */
-	if (params->num_odm_segments == 4) {
-		dtbdto_div = 2;
-		req_dtbclk_khz = params->pixclk_khz / 4;
-	} else if ((params->num_odm_segments == 2) ||
-			(params->timing->pixel_encoding == PIXEL_ENCODING_YCBCR420) ||
-			(params->timing->flags.DSC && params->timing->pixel_encoding == PIXEL_ENCODING_YCBCR422
-					&& !params->timing->dsc_cfg.ycbcr422_simple)) {
-		dtbdto_div = 4;
-		req_dtbclk_khz = params->pixclk_khz / 2;
-	} else
-		dtbdto_div = 8;
+		/* Mode	                DTBDTO Rate       DTBCLK_DTO<x>_DIV Register
+		* ODM 4:1 combine      pixel rate/4      2
+		* ODM 2:1 combine      pixel rate/2      4
+		* non-DSC 4:2:0 mode   pixel rate/2      4
+		* DSC native 4:2:0     pixel rate/2      4
+		* DSC native 4:2:2     pixel rate/2      4
+		* Other modes          pixel rate        8
+		*/
+		if (params->num_odm_segments == 4) {
+			dtbdto_div = 2;
+			req_dtbclk_khz = params->pixclk_khz / 4;
+		} else if ((params->num_odm_segments == 2) ||
+				(params->timing->pixel_encoding == PIXEL_ENCODING_YCBCR420) ||
+				(params->timing->flags.DSC && params->timing->pixel_encoding == PIXEL_ENCODING_YCBCR422
+						&& !params->timing->dsc_cfg.ycbcr422_simple)) {
+			dtbdto_div = 4;
+			req_dtbclk_khz = params->pixclk_khz / 2;
+		} else
+			dtbdto_div = 8;
 
-	if (params->ref_dtbclk_khz && req_dtbclk_khz) {
-		uint32_t modulo, phase;
+		if (params->ref_dtbclk_khz && req_dtbclk_khz) {
+			uint32_t modulo, phase;
 
-		// phase / modulo = dtbclk / dtbclk ref
-		modulo = params->ref_dtbclk_khz * 1000;
-		phase = div_u64((((unsigned long long)modulo * req_dtbclk_khz) + params->ref_dtbclk_khz - 1),
-				params->ref_dtbclk_khz);
+			// phase / modulo = dtbclk / dtbclk ref
+			modulo = params->ref_dtbclk_khz * 1000;
+			phase = div_u64((((unsigned long long)modulo * req_dtbclk_khz) + params->ref_dtbclk_khz - 1),
+					params->ref_dtbclk_khz);
 
-		REG_UPDATE(OTG_PIXEL_RATE_CNTL[params->otg_inst],
-				DTBCLK_DTO_DIV[params->otg_inst], dtbdto_div);
+			REG_UPDATE(OTG_PIXEL_RATE_CNTL[params->otg_inst],
+					DTBCLK_DTO_DIV[params->otg_inst], dtbdto_div);
 
-		REG_WRITE(DTBCLK_DTO_MODULO[params->otg_inst], modulo);
-		REG_WRITE(DTBCLK_DTO_PHASE[params->otg_inst], phase);
+			REG_WRITE(DTBCLK_DTO_MODULO[params->otg_inst], modulo);
+			REG_WRITE(DTBCLK_DTO_PHASE[params->otg_inst], phase);
 
-		REG_UPDATE(OTG_PIXEL_RATE_CNTL[params->otg_inst],
-				DTBCLK_DTO_ENABLE[params->otg_inst], 1);
+			REG_UPDATE(OTG_PIXEL_RATE_CNTL[params->otg_inst],
+					DTBCLK_DTO_ENABLE[params->otg_inst], 1);
 
-		REG_WAIT(OTG_PIXEL_RATE_CNTL[params->otg_inst],
-				DTBCLKDTO_ENABLE_STATUS[params->otg_inst], 1,
-				1, 100);
+			REG_WAIT(OTG_PIXEL_RATE_CNTL[params->otg_inst],
+					DTBCLKDTO_ENABLE_STATUS[params->otg_inst], 1,
+					1, 100);
 
-		/* The recommended programming sequence to enable DTBCLK DTO to generate
-		 * valid pixel HPO DPSTREAM ENCODER, specifies that DTO source select should
-		 * be set only after DTO is enabled
-		 */
-		REG_UPDATE(OTG_PIXEL_RATE_CNTL[params->otg_inst],
-				PIPE_DTO_SRC_SEL[params->otg_inst], 1);
-	} else {
-		REG_UPDATE_3(OTG_PIXEL_RATE_CNTL[params->otg_inst],
-				DTBCLK_DTO_ENABLE[params->otg_inst], 0,
-				PIPE_DTO_SRC_SEL[params->otg_inst], 0,
-				DTBCLK_DTO_DIV[params->otg_inst], dtbdto_div);
+			/* The recommended programming sequence to enable DTBCLK DTO to generate
+			* valid pixel HPO DPSTREAM ENCODER, specifies that DTO source select should
+			* be set only after DTO is enabled
+			*/
+			REG_UPDATE(OTG_PIXEL_RATE_CNTL[params->otg_inst],
+					PIPE_DTO_SRC_SEL[params->otg_inst], 1);
+		} else {
+			REG_UPDATE_3(OTG_PIXEL_RATE_CNTL[params->otg_inst],
+					DTBCLK_DTO_ENABLE[params->otg_inst], 0,
+					PIPE_DTO_SRC_SEL[params->otg_inst], 0,
+					DTBCLK_DTO_DIV[params->otg_inst], dtbdto_div);
 
-		REG_WRITE(DTBCLK_DTO_MODULO[params->otg_inst], 0);
-		REG_WRITE(DTBCLK_DTO_PHASE[params->otg_inst], 0);
+			REG_WRITE(DTBCLK_DTO_MODULO[params->otg_inst], 0);
+			REG_WRITE(DTBCLK_DTO_PHASE[params->otg_inst], 0);
+		}
 	}
+	
 }
 
 void dccg31_set_audio_dtbclk_dto(
