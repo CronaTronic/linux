@@ -385,6 +385,15 @@ static void dcn30_hpo_hdmi_stream_enc_setup_stream_attribute(
 
 	/* Clear AVMUTE */
 	REG_UPDATE(HDMI_TB_ENC_GC_CONTROL, HDMI_GC_AVMUTE, 0);
+
+	dm_error("FRL REGDUMP HPO: STREAM_ENC_CLK=0x%08x"
+      " TB_ENC_CONTROL=0x%08x TB_ENC_MODE=0x%08x"
+      " TB_ENC_PIXEL_FORMAT=0x%08x TB_ENC_H_ACTIVE_BLANK=0x%08x",
+      REG_READ(HDMI_STREAM_ENC_CLOCK_CONTROL),
+      REG_READ(HDMI_TB_ENC_CONTROL),
+      REG_READ(HDMI_TB_ENC_MODE),
+      REG_READ(HDMI_TB_ENC_PIXEL_FORMAT),
+      REG_READ(HDMI_TB_ENC_H_ACTIVE_BLANK));
 }
 
 struct frl_audio_clock_info {

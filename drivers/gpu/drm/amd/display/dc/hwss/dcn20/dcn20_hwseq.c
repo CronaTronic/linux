@@ -3090,6 +3090,14 @@ void dcn20_enable_stream(struct pipe_ctx *pipe_ctx)
 
 	link_hwss->setup_stream_encoder(pipe_ctx);
 
+	if (dc_is_hdmi_frl_signal(pipe_ctx->stream->signal)) {
+      uint32_t h_timing_addr = (0x34C0 + 0x1b2e); /* OTG0_OTG_H_TIMING_CNTL */
+      uint32_t otg_ctrl_addr = (0x34C0 + 0x1b41); /* OTG0_OTG_CONTROL */
+      dm_error("FRL REGDUMP OTG: H_TIMING_CNTL=0x%08x OTG_CONTROL=0x%08x",
+          dm_read_reg(dc->ctx, h_timing_addr),
+          dm_read_reg(dc->ctx, otg_ctrl_addr));
+  	}
+
 	if (pipe_ctx->plane_state && pipe_ctx->plane_state->flip_immediate != 1) {
 		if (dc->hwss.program_dmdata_engine)
 			dc->hwss.program_dmdata_engine(pipe_ctx);
