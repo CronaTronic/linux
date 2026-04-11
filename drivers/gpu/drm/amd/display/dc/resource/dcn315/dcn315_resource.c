@@ -458,12 +458,18 @@ static struct dcn30_hpo_hdmi_stream_encoder_registers hpo_hdmi_stream_enc_regs =
 	DCN3_0_HPO_HDMI_STREAM_ENC_REG_LIST()
 };
 
+#define DCN3_1_HPO_HDMI_STREAM_ENC_MASK_SH_LIST(mask_sh)                        \
+    DCN3_0_HPO_HDMI_STREAM_ENC_MASK_SH_LIST(mask_sh),                           \
+	SE_SF(HDMI_STREAM_ENC_CLOCK_RAMP_ADJUSTER_FIFO_STATUS_CONTROL2,             \
+	      FIFO_DB_DISABLE, mask_sh)                                             \
+    
 static const struct dcn30_hpo_hdmi_stream_encoder_shift hpo_hdmi_se_shift = {
-	DCN3_0_HPO_HDMI_STREAM_ENC_MASK_SH_LIST(__SHIFT)
+	DCN3_1_HPO_HDMI_STREAM_ENC_MASK_SH_LIST(__SHIFT)
 };
 
+
 static const struct dcn30_hpo_hdmi_stream_encoder_mask hpo_hdmi_se_mask = {
-	DCN3_0_HPO_HDMI_STREAM_ENC_MASK_SH_LIST(_MASK)
+	DCN3_1_HPO_HDMI_STREAM_ENC_MASK_SH_LIST(_MASK)
 };
 
 #define hpo_dp_link_encoder_reg_list(id)\

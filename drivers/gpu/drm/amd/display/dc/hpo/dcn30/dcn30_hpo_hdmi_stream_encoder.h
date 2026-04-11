@@ -551,6 +551,7 @@ struct dcn30_hpo_hdmi_stream_encoder_registers {
 	type FIFO_CALIBRATED;                                    \
 	type FIFO_READ_START_LEVEL;                              \
 	type FIFO_READ_CLOCK_SRC;                                \
+	type FIFO_DB_DISABLE;                                    \
 	/* TB encoder control */                                 \
 	type HDMI_TB_ENC_EN;                                     \
 	type HDMI_RESET;                                         \
