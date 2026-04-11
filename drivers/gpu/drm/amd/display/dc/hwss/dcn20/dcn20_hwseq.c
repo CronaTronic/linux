@@ -3090,6 +3090,49 @@ void dcn20_enable_stream(struct pipe_ctx *pipe_ctx)
 
 	link_hwss->setup_stream_encoder(pipe_ctx);
 
+	{
+		uint32_t base;
+		/* Segment 2 */
+		base = 0x34C0;
+		uint32_t h_timing_addr = (base + 0x1b2e); /* OTG0_OTG_H_TIMING_CNTL */
+		uint32_t otg_ctrl_addr = (base + 0x1b41); /* OTG0_OTG_CONTROL */
+		dm_error("FRL REGDUMP OTG: H_TIMING_CNTL=0x%08x OTG_CONTROL=0x%08x",
+			dm_read_reg(dc->ctx, h_timing_addr),
+			dm_read_reg(dc->ctx, otg_ctrl_addr));
+		
+		/* Segment 3 */
+		base = 0x9000;
+		uint32_t hdmi_stream_enc_clock_control = (base + 0x08d3);
+		uint32_t hdmi_tb_enc_control = (base + 0x08df);
+		uint32_t hdmi_tb_enc_mode = (base + 0x0908);
+		uint32_t hdmi_tb_enc_pixel_format = (base + 0x08e0);
+		uint32_t hdmi_tb_enc_h_active_blank = (base + 0x0900);
+
+		dm_error("FRL REGDUMP HPO: STREAM_ENC_CLK=0x%08x"
+			" TB_ENC_CONTROL=0x%08x TB_ENC_MODE=0x%08x"
+			" TB_ENC_PIXEL_FORMAT=0x%08x TB_ENC_H_ACTIVE_BLANK=0x%08x",
+			dm_read_reg(dc->ctx, hdmi_stream_enc_clock_control),
+			dm_read_reg(dc->ctx, hdmi_tb_enc_control),
+			dm_read_reg(dc->ctx, hdmi_tb_enc_mode),
+			dm_read_reg(dc->ctx, hdmi_tb_enc_pixel_format),
+			dm_read_reg(dc->ctx, hdmi_tb_enc_h_active_blank));
+		dm_error("FRL REGDUMP HPO2: FIFO_CTRL0=0x%08x FIFO_CTRL1=0x%08x FIFO_CTRL2=0x%08x",
+			dm_read_reg(dc->ctx, base + 0x08d6),  /* FIFO_STATUS_CONTROL0 */
+			dm_read_reg(dc->ctx, base + 0x08d7),  /* FIFO_STATUS_CONTROL1 */
+			dm_read_reg(dc->ctx, base + 0x08d8)); /* FIFO_STATUS_CONTROL2 */
+		dm_error("FRL REGDUMP HPO2: BUF_CTRL=0x%08x HPO_TOP_HW=0x%08x HPO_TOP_CLK=0x%08x",
+			dm_read_reg(dc->ctx, base + 0x08fb),  /* TB_ENC_BUFFER_CONTROL */
+			dm_read_reg(dc->ctx, base + 0x0e4a),  /* HPO_TOP_HW_CONTROL */
+			dm_read_reg(dc->ctx, base + 0x0e43)); /* HPO_TOP_CLOCK_CONTROL */
+		dm_error("FRL REGDUMP HPO2: LINK_ENC_CTRL=0x%08x LINK_ENC_CLK=0x%08x"
+			" FRL_ENC_CFG=0x%08x FRL_ENC_CFG2=0x%08x",
+			dm_read_reg(dc->ctx, base + 0x095b),  /* HDMI_LINK_ENC_CONTROL */
+			dm_read_reg(dc->ctx, base + 0x095c),  /* HDMI_LINK_ENC_CLK_CTRL */
+			dm_read_reg(dc->ctx, base + 0x0965),  /* HDMI_FRL_ENC_CONFIG */
+			dm_read_reg(dc->ctx, base + 0x0966)); /* HDMI_FRL_ENC_CONFIG2 */
+		
+	}
+
 	if (pipe_ctx->plane_state && pipe_ctx->plane_state->flip_immediate != 1) {
 		if (dc->hwss.program_dmdata_engine)
 			dc->hwss.program_dmdata_engine(pipe_ctx);

@@ -190,7 +190,13 @@ static void dccg31_enable_hdmistreamclk(struct dccg *dccg, int otg_inst, int hdm
 	default:
 		BREAK_TO_DEBUGGER();
 		return;
-	}
+	} 
+	dm_error("FRL REGDUMP DCCG: HDMISTREAMCLK_CNTL=0x%08x"
+      " GATE_DISABLE_CNTL3=0x%08x"
+      " HDMISTREAMCLK0_DTO_PARAM=0x%08x",
+      REG_READ(HDMISTREAMCLK_CNTL),
+      REG_READ(DCCG_GATE_DISABLE_CNTL3),
+      REG_READ(HDMISTREAMCLK0_DTO_PARAM));
 }
 
 static void dccg31_disable_hdmistreamclk(struct dccg *dccg, int hdmi_hpo_inst)
@@ -663,6 +669,12 @@ void dccg31_set_dtbclk_dto(
 			REG_WRITE(DTBCLK_DTO_PHASE[params->otg_inst], 0);
 		}
 	}
+	dm_error("FRL REGDUMP DCCG: PIXEL_RATE_CNTL[%d]=0x%08x"
+      " DTBCLK_DTO_MODULO=%u DTBCLK_DTO_PHASE=%u",
+      params->otg_inst,
+      REG_READ(OTG_PIXEL_RATE_CNTL[params->otg_inst]),
+      REG_READ(DTBCLK_DTO_MODULO[params->otg_inst]),
+      REG_READ(DTBCLK_DTO_PHASE[params->otg_inst]));
 	
 }
 
